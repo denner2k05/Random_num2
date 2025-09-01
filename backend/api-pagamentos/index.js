@@ -76,7 +76,7 @@ app.post('/pagamento', async (req, res) => {
 
     const response = await axios.post('https://api.pagseguro.com/pix/payments', pagseguroPayload, {
       headers: {
-        'Authorization': process.env.PAGSEGURO_TOKEN,
+        'Authorization': `Bearer ${process.env.PAGSEGURO_TOKEN}`,
         'Content-Type': 'application/json'
       }
     });
