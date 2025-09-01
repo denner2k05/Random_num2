@@ -464,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (paymentMethod === 'pix') {
                 // Integração PagSeguro Pix via Node/Express
-                const response = await fetch('https://random-num.onrender.com/pagamento', {
+                const response = await fetch('https://random-num2-cbo9.onrender.com/pagamento', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
         saldoPollingInterval = setInterval(async () => {
             try {
                 // Chama endpoint backend para saldo atualizado
-                const resp = await fetch(`https://random-num.onrender.com/api/saldo?user_id=${currentUser.id}` );
+                const resp = await fetch(`https://random-num2-cbo9.onrender.com/api/saldo?user_id=${currentUser.id}` );
                 const data = await resp.json();
                 if (data && typeof data.balance === 'number') {
                     if (data.balance > saldoAnterior) {

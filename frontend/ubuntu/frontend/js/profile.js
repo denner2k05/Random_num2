@@ -237,7 +237,7 @@ init();
                 // Integração PagSeguro Pix via Node/Express
                 const email = currentUser.email;
                 const userId = currentUser.id;
-                const response = await fetch('https://random-num.onrender.com/pagamento', {
+                const response = await fetch('https://random-num2-cbo9.onrender.com/pagamento', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -375,7 +375,7 @@ document.getElementById('withdrawal-form').addEventListener('submit', async func
         return;
     }
 
-    fetch('https://random-num.onrender.com/api/solicitar-saque', {
+    fetch('https://random-num2-cbo9.onrender.com/api/solicitar-saque', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
