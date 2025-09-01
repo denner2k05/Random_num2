@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Number | Perfil</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">🍀</div>
+                LUCKY NUMBER
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="game.html">Jogar</a></li>
+                    <li><a href="profile.html" class="active">Perfil</a></li>
+                    <li><a href="#" id="logout-btn">Sair</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="container">
+            <div class="user-balance">
+                <span>Saldo: </span>
+                <span id="user-balance">R$ 0,00</span>
+                <button class="btn btn-small btn-primary" id="deposit-btn">Depositar</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="profile-page">
+        <div class="container">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="profile-info">
+                    <h2 id="profile-username">Nome do Usuário</h2>
+                    <p id="profile-email">usuario@exemplo.com</p>
+                    <p>Membro desde: <span id="profile-joined-date">01/01/2025</span></p>
+                </div>
+            </div>
+
+            <div class="profile-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-dice"></i>
+                    </div>
+                    <div class="stat-value" id="total-bets">0</div>
+                    <div class="stat-label">Apostas Totais</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="stat-value" id="total-wins">0</div>
+                    <div class="stat-label">Vitórias</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="stat-value" id="win-rate">0%</div>
+                    <div class="stat-label">Taxa de Vitória</div>
+                </div>
+            </div>
+
+            <div class="profile-tabs">
+                <div class="tab-buttons">
+                    <button class="btn btn-small btn-primary" data-tab="history">Histórico de Apostas</button>
+                    <button class="btn btn-small btn-primary" data-tab="transactions">Transações</button>
+                    <button class="btn btn-small btn-primary" data-tab="settings">Área de Saque</button>
+                </div>
+
+                <div class="tab-content">
+                    <div class="tab-pane active" id="history-tab">
+                        <h3>Histórico de Apostas</h3>
+                        <div class="bets-table-container">
+                            <table class="bets-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Faixa</th>
+                                        <th>Seu Número</th>
+                                        <th>Número Sorteado</th>
+                                        <th>Aposta</th>
+                                        <th>Resultado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bet-history-body">
+                                    <!-- Dados serão inseridos via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination" id="history-pagination">
+                            <!-- Paginação será inserida via JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="tab-pane" id="transactions-tab">
+                        <h3>Histórico de Transações</h3>
+                        <div class="transactions-container">
+                            <table class="bets-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Tipo</th>
+                                        <th>Valor</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactions-body">
+                                    <!-- Dados serão inseridos via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination" id="transactions-pagination">
+                            <!-- Paginação será inserida via JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="tab-pane" id="settings-tab">
+                        <h3>Área de Saque</h3>
+                        <form id="withdrawal-form">
+                            <div class="form-group">
+                                <label for="withdrawal-amount">Valor (R$)</label>
+                                <input type="number" id="withdrawal-amount" min="20" step="10" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="withdrawal-method">Método de Saque</label>
+                                <select id="withdrawal-method" required>
+                                    <option value="">Selecione um método</option>
+                                    <option value="pix">PIX</option>
+                                    <option value="bank-transfer">Transferência Bancária</option>
+                                </select>
+                            </div>
+                            <!-- PIX Key Section -->
+                            <div class="form-group pix-key-group" style="display: none;">
+                                <label for="pix-key-type">Tipo de Chave PIX</label>
+                                <select id="pix-key-type">
+                                    <option value="">Selecione o tipo</option>
+                                    <option value="cpf">CPF</option>
+                                    <option value="celular">Celular</option>
+                                    <option value="email">E-mail</option>
+                                    <option value="aleatoria">Chave Aleatória</option>
+                                </select>
+                                <label for="pix-key">Chave PIX</label>
+                                <input type="text" id="pix-key">
+                            </div>
+                            <!-- Bank Transfer Section -->
+                            <div class="bank-details-group" style="display: none;">
+                                <div class="form-group">
+                                    <label for="bank-name">Banco</label>
+                                    <input type="text" id="bank-name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="account-number">Número da Conta</label>
+                                    <input type="text" id="account-number">
+                                </div>
+                                <div class="form-group">
+                                    <label for="branch-number">Agência</label>
+                                    <input type="text" id="branch-number">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Solicitar Saque</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Depósito -->
+    <div class="modal" id="deposit-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Depositar Saldo</h2>
+            <form id="deposit-form">
+                <div class="form-group">
+                    <label for="deposit-amount">Valor (R$)</label>
+                    <input type="number" id="deposit-amount" min="10" step="5" required>
+                </div>
+                <div class="form-group">
+                    <label>Método de Pagamento</label>
+                    <div class="payment-methods">
+                        <div class="payment-method">
+                            <input type="radio" id="pix" name="payment-method" value="pix" checked>
+                            <label for="pix">Pix (PagSeguro)</label>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Confirmar Depósito</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Pix QR Code -->
+    <div class="modal" id="pix-modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="document.getElementById('pix-modal').style.display='none'">&times;</span>
+            <h2>Pagamento Pix</h2>
+            <img id="pix-qr-img" src="" alt="QR Code Pix" style="max-width:220px;margin:15px 0;">
+            <p>Copia e Cola Pix:</p>
+            <div id="pix-qr-text" style="word-break:break-all;background:#f6f6f6;padding:8px;border-radius:6px;"></div>
+            <p style="margin-top:10px;">Após o pagamento, aguarde alguns segundos para o saldo ser creditado!</p>
+        </div>
+    </div>
+    
+    <!-- Modal de Alteração de Senha -->
+    <div class="modal" id="change-password-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Alterar Senha</h2>
+            <form id="change-password-form">
+                <div class="form-group">
+                    <label for="current-password">Senha Atual</label>
+                    <input type="password" id="current-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-password">Nova Senha</label>
+                    <input type="password" id="new-password" required>
+                    <small>A senha deve ter pelo menos 8 caracteres</small>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-new-password">Confirmar Nova Senha</label>
+                    <input type="password" id="confirm-new-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Alterar Senha</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Lucky Number. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Inicialização do Supabase v2 no window
+        const SUPABASE_URL = 'https://wvequdxcckksnkkncqkd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2ZXF1ZHhjY2trc25ra25jcWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzNDY1NzcsImV4cCI6MjA2NDkyMjU3N30.4NbQ9FsF0kKVeKlHPbWou8viOoUOHMqFcXl-m3NS_p0';
+        window.supabase = window.supabase || {};
+        window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
+    <script src="js/profile.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>

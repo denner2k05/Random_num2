@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Number | Acerte o número, ganhe de verdade!</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Animações e efeitos dinâmicos */
+        body {
+            background: linear-gradient(135deg, #1E40AF 0%, #1E3A8A 50%, #8B5CF6 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            overflow-x: hidden;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .floating-number {
+            position: absolute;
+            font-size: 60px;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.1);
+            animation: floatUp 8s linear infinite;
+        }
+        
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .hero {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(96, 165, 250, 0.1) 0%, transparent 50%);
+            animation: heroParticles 20s linear infinite;
+        }
+        
+        @keyframes heroParticles {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        
+        .hero-number {
+            width: 160px;
+            height: 160px;
+            background: linear-gradient(135deg, white, #f3f4f6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            font-weight: 900;
+            color: #1E40AF;
+            margin: 40px auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            animation: heroNumberFloat 4s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-number::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(30, 64, 175, 0.3), transparent);
+            animation: rotate 3s linear infinite;
+        }
+        
+        .hero-number::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            background: linear-gradient(135deg, white, #f3f4f6);
+            border-radius: 50%;
+            z-index: 1;
+        }
+        
+        .hero-number span {
+            position: relative;
+            z-index: 2;
+            animation: numberChange 3s ease-in-out infinite;
+        }
+        
+        @keyframes heroNumberFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(-15px) rotate(90deg); }
+            50% { transform: translateY(0px) rotate(180deg); }
+            75% { transform: translateY(-8px) rotate(270deg); }
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes numberChange {
+            0%, 80%, 100% { transform: scale(1); }
+            10% { transform: scale(1.2); }
+        }
+        
+        .step-card {
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .step-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .step-card:hover::before {
+            left: 100%;
+        }
+        
+        .step-card:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 20px 40px rgba(30, 64, 175, 0.2);
+        }
+        
+        .step-icon {
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .step-card:hover .step-icon {
+            transform: rotate(360deg) scale(1.1);
+            box-shadow: 0 0 30px rgba(30, 64, 175, 0.4);
+        }
+        
+        .multiplier-card {
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .multiplier-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(30, 64, 175, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .multiplier-card:hover::before {
+            left: 100%;
+        }
+        
+        .multiplier-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: #1E40AF;
+            box-shadow: 0 15px 30px rgba(30, 64, 175, 0.2);
+        }
+        
+        .multiplier-value {
+            animation: multiplierPulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes multiplierPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .feature-card {
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .feature-card:hover::before {
+            left: 100%;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(30, 64, 175, 0.15);
+        }
+        
+        .cta-buttons .btn {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-buttons .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .cta-buttons .btn:hover::before {
+            left: 100%;
+        }
+        
+        .cta-buttons .btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .logo:hover {
+            animation: logoSpin 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes logoSpin {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        
+        .nav-item {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .nav-item:hover::before {
+            left: 100%;
+        }
+        
+        .section-header h2 {
+            position: relative;
+        }
+        
+        .section-header h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(135deg, #1E40AF, #8B5CF6);
+            border-radius: 2px;
+            animation: underlineGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes underlineGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(30, 64, 175, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(30, 64, 175, 0.6); }
+        }
+        
+        .testimonial-slider {
+            position: relative;
+            overflow: hidden;
+            margin: 60px 0;
+        }
+        
+        .testimonial {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin: 0 20px;
+        }
+        
+        .testimonial-text {
+            font-size: 18px;
+            font-style: italic;
+            margin-bottom: 20px;
+            color: #374151;
+        }
+        
+        .testimonial-author {
+            font-weight: 700;
+            color: #1E40AF;
+        }
+        
+        .live-stats {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 40px 0;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .live-stats h3 {
+            color: #1E40AF ;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            display: block;
+            font-size: 32px;
+            font-weight: 900;
+            color: #60A5FA;
+            margin-bottom: 5px;
+            animation: countUp 2s ease-out;
+        }
+        
+        @keyframes countUp {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .scroll-indicator {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 24px;
+            animation: bounce 2s infinite;
+            z-index: 10;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+        
+        .winner-notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+            transform: translateX(400px);
+            transition: transform 0.5s ease;
+            z-index: 100;
+        }
+        .winner-notification.show {
+            transform: translateX(0);
+        }
+        
+        .winner-text {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .winner-amount {
+            font-size: 18px;
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+    <!-- Elementos flutuantes -->
+    <div class="floating-elements" id="floating-elements"></div>
+    
+    <!-- Notificação de ganhador -->
+    
+    
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">🍀</div>
+                LUCKY NUMBER
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="index.html" class="active nav-item">Início</a></li>
+                    <li><a href="game.html" class="btn btn-secondary nav-item">Jogar</a></li>
+                    <li><a href="login.html" class="btn btn-secondary nav-item">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>Acerte o número,<br>ganhe de verdade!</h1>
+                    <p>Teste sua sorte e multiplique suas apostas com o Lucky Number</p>
+                    <div class="hero-number">
+                        <span id="hero-number">7</span>
+                    </div>
+                    <div class="cta-buttons">
+                        <a href="register.html" class="btn btn-large btn-accent">🚀 Comece a jogar agora</a>
+                    </div>
+                </div>
+            </div>
+            <div class="scroll-indicator">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </section>
+
+        <!-- Estatísticas ao vivo -->
+        <section class="content-section">
+            <div class="container">
+                <div class="live-stats">
+                    <h3>📊 Estatísticas ao Vivo</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-number" id="players-online">1,247</span>
+                            <span class="stat-label">Jogadores Online</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="games-today">8,932</span>
+                            <span class="stat-label">Jogos Hoje</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="biggest-win">R$ 15,750</span>
+                            <span class="stat-label">Maior Ganho</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="total-paid">R$ 2.8M</span>
+                            <span class="stat-label">Total Pago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Como Jogar Section -->
+        <section class="content-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Como Jogar</h2>
+                </div>
+                
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <h3>1. Crie uma conta</h3>
+                        <p>Registre-se gratuitamente em menos de 1 minuto</p>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <h3>2. Faça um depósito</h3>
+                        <p>Adicione saldo via PIX ou cartão de forma segura</p>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-icon">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <h3>3. Escolha seu modo de jogo</h3>
+                        <p>Selecione a faixa de números e defina sua estratégia</p>
+                    </div>
+                    
+                    <div class="step-card">
+                        <div class="step-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <h3>4. Chute um número, acerte e ganhe</h3>
+                        <p>Acerte o número sorteado e multiplique sua aposta!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Multiplicadores Section -->
+        <section class="content-section" style="background: rgba(249, 250, 251, 0.95);">
+            <div class="container">
+                <div class="section-header">
+                    <h2>💰 Multiplicadores</h2>
+                    <p>Escolha sua faixa e multiplique seus ganhos</p>
+                </div>
+                
+                <div class="multipliers-grid">
+                    <div class="multiplier-card">
+                        <h3>1-50</h3>
+                        <div class="multiplier-value">1.2x</div>
+                        <p class="multiplier-chances">4 chances</p>
+                        <div class="multiplier-example">
+                            <small>R$ 100 → R$ 120</small>
+                        </div>
+                    </div>
+                    
+                    <div class="multiplier-card">
+                        <h3>1-100</h3>
+                        <div class="multiplier-value">2x</div>
+                        <p class="multiplier-chances">4 chances</p>
+                        <div class="multiplier-example">
+                            <small>R$ 100 → R$ 200</small>
+                        </div>
+                    </div>
+                    
+                    <div class="multiplier-card">
+                        <h3>1-200</h3>
+                        <div class="multiplier-value">2.5x</div>
+                        <p class="multiplier-chances">5 chances</p>
+                        <div class="multiplier-example">
+                            <small>R$ 100 → R$ 250</small>
+                        </div>
+                    </div>
+                    
+                    <div class="multiplier-card">
+                        <h3>1-300</h3>
+                        <div class="multiplier-value">5x</div>
+                        <p class="multiplier-chances">5 chances</p>
+                        <div class="multiplier-example">
+                            <small>R$ 100 → R$ 500</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Depoimentos -->
+
+        <!-- Características Section -->
+        <section class="content-section">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-dice"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>Diversão garantida</h3>
+                            <p>Jogue quando quiser com diferentes níveis de dificuldade e emoção</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>Pagamentos rápidos</h3>
+                            <p>Receba seus ganhos em segundos via PIX, sem burocracia</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>100% seguro</h3>
+                            <p>Seus dados e transações protegidos com criptografia de ponta</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Lucky Number. Todos os direitos reservados. ✨</p>
+        </div>
+    </footer>
+
+    <script>
+        
+        
+        // Criar números flutuantes
+        function createFloatingNumbers() {
+            const container = document.getElementById('floating-elements');
+            const numbers = ['7', '13', '21', '42', '77', '99'];
+            
+            setInterval(() => {
+                const number = document.createElement('div');
+                number.className = 'floating-number';
+                number.textContent = numbers[Math.floor(Math.random() * numbers.length)];
+                number.style.left = Math.random() * 100 + '%';
+                number.style.animationDuration = (Math.random() * 3 + 5) + 's';
+                container.appendChild(number);
+                
+                setTimeout(() => {
+                    if (number.parentNode) {
+                        number.parentNode.removeChild(number);
+                    }
+                }, 8000);
+            }, 2000);
+        }
+        
+        // Mudar número do hero
+        function changeHeroNumber() {
+            const heroNumber = document.getElementById('hero-number');
+            const numbers = ['7', '13', '21', '42', '77', '99'];
+            let currentIndex = 0;
+            
+            setInterval(() => {
+                currentIndex = (currentIndex + 1) % numbers.length;
+                heroNumber.textContent = numbers[currentIndex];
+            }, 3000);
+        }
+        
+        // Atualizar estatísticas
+        function updateStats() {
+            const playersOnline = document.getElementById('players-online');
+            const gamesToday = document.getElementById('games-today');
+            
+            setInterval(() => {
+                const currentPlayers = parseInt(playersOnline.textContent.replace(',', ''));
+                const newPlayers = currentPlayers + Math.floor(Math.random() * 10) - 5;
+                playersOnline.textContent = Math.max(1000, newPlayers).toLocaleString();
+                
+                const currentGames = parseInt(gamesToday.textContent.replace(',', ''));
+                const newGames = currentGames + Math.floor(Math.random() * 5);
+                gamesToday.textContent = newGames.toLocaleString();
+            }, 5000);
+        }
+        
+        
+        
+        // Remover indicador de scroll ao rolar
+        function handleScroll() {
+            const scrollIndicator = document.querySelector('.scroll-indicator');
+            
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 100) {
+                    scrollIndicator.style.opacity = '0';
+                } else {
+                    scrollIndicator.style.opacity = '1';
+                }
+            });
+        }
+        
+        // Animação de entrada dos elementos
+        function animateOnScroll() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animation = 'fadeInUp 0.8s ease-out forwards';
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.step-card, .multiplier-card, .feature-card').forEach(el => {
+                observer.observe(el);
+            });
+        }
+        
+        // Inicializar tudo
+        document.addEventListener('DOMContentLoaded', function() {
+            createFloatingNumbers();
+            changeHeroNumber();
+            updateStats();
+            showWinnerNotifications();
+            handleScroll();
+            animateOnScroll();
+        });
+    </script>
+    
+    <style>
+        /* Estilos adicionais */
+        .multiplier-example {
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(30, 64, 175, 0.1);
+            border-radius: 6px;
+        }
+        
+        .multiplier-example small {
+            color: #1E40AF;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .floating-number {
+                font-size: 40px;
+            }
+            
+            .hero-number {
+                width: 120px;
+                height: 120px;
+                font-size: 48px;
+            }
+            
+            .winner-notification {
+                right: 10px;
+                left: 10px;
+                transform: translateY(-100px);
+            }
+            
+            .winner-notification.show {
+                transform: translateY(0);
+            }
+        }
+    </style>
+    
+    <script src="js/profile.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
+

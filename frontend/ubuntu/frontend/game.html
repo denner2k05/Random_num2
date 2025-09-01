@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Number | Jogar</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Estilos dinâmicos inline para garantir que funcionem */
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(59, 130, 246, 0.6);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+        
+        .game-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #1E40AF, #8B5CF6, #06B6D4);
+            background-size: 200% 100%;
+            animation: gradientMove 3s ease infinite;
+        }
+        
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .range-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .range-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .range-btn:hover::before {
+            left: 100%;
+        }
+        
+        .range-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(30, 64, 175, 0.3);
+        }
+        
+        .range-btn.active {
+            background: linear-gradient(135deg, #1E40AF, #8B5CF6);
+            color: white;
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 30px rgba(30, 64, 175, 0.5);
+        }
+        
+        .quick-bet-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .quick-bet-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(30, 64, 175, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+        
+        .quick-bet-btn:active::after {
+            width: 200px;
+            height: 200px;
+        }
+        
+        .quick-bet-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 5px 15px rgba(30, 64, 175, 0.2);
+        }
+        
+        #place-bet-btn {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1E40AF, #8B5CF6);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        #place-bet-btn::before {
+            content: '🎲';
+            position: absolute;
+            left: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            transition: all 0.4s ease;
+            opacity: 0;
+        }
+        
+        #place-bet-btn:hover::before {
+            left: 20px;
+            opacity: 1;
+        }
+        
+        #place-bet-btn:hover {
+            padding-left: 70px;
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 0 30px rgba(30, 64, 175, 0.5);
+        }
+        
+        .number-input input {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .number-input input:focus {
+            transform: scale(1.02);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+        
+        .bet-input input:focus {
+            transform: scale(1.02);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+        
+        .user-balance {
+            animation: balanceGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes balanceGlow {
+            0%, 100% { box-shadow: 0 4px 15px rgba(30, 64, 175, 0.2); }
+            50% { box-shadow: 0 4px 25px rgba(30, 64, 175, 0.4); }
+        }
+        
+        .logo:hover {
+            animation: logoSpin 0.6s ease-in-out;
+        }
+        
+        @keyframes logoSpin {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        
+        .game-result {
+            animation: resultSlideIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes resultSlideIn {
+            0% { transform: translateY(50px) scale(0.8); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        
+        .result-number {
+            animation: numberReveal 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes numberReveal {
+            0% { transform: scale(0) rotate(180deg); opacity: 0; }
+            50% { transform: scale(1.3) rotate(90deg); opacity: 0.7; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        .bets-table tr {
+            transition: all 0.3s ease;
+        }
+        
+        .bets-table tr:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            transform: translateX(5px);
+        }
+        
+        .win-result {
+            animation: winPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes winPulse {
+            0%, 100% { text-shadow: 0 0 5px rgba(16, 185, 129, 0.5); }
+            50% { text-shadow: 0 0 15px rgba(16, 185, 129, 0.8); }
+        }
+        
+        .lose-result {
+            animation: losePulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes losePulse {
+            0%, 100% { text-shadow: 0 0 5px rgba(239, 68, 68, 0.5); }
+            50% { text-shadow: 0 0 15px rgba(239, 68, 68, 0.8); }
+        }
+        
+        .nav-item {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .nav-item:hover::before {
+            left: 100%;
+        }
+        
+        .success-animation {
+            animation: successBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes successBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .error-animation {
+            animation: errorShake 0.5s ease-in-out;
+        }
+        
+        @keyframes errorShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Partículas flutuantes -->
+    <div class="floating-particles" id="particles"></div>
+    
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">🍀</div>
+                LUCKY NUMBER
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="game.html" class="active nav-item">Jogar</a></li>
+                    <li><a href="profile.html" class="nav-item">Perfil</a></li>
+                    <li><a href="#" id="logout-btn" class="nav-item">Sair</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="container">
+            <div class="user-balance">
+                <label><input type="radio" name="bet-mode" value="real" checked> Saldo Real</label>
+                <span id="user-balance">R$ 0,00</span>
+                <button class="btn btn-small btn-primary" id="deposit-btn">💰 Depositar</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="game-page">
+        <div class="container">
+            <section class="game-container">
+                <div class="game-header">
+                    <h2>🎯 Adivinhe o Número</h2>
+                    <p>Escolha uma faixa, digite um número e faça sua aposta!</p>
+                    <div class="luck-meter">
+                        <div class="luck-bar">
+                            <div class="luck-fill" id="luck-fill"></div>
+                        </div>
+                        <span class="luck-text">Medidor da Sorte: <span id="luck-percentage">50%</span></span>
+                    </div>
+                </div>
+
+                <div class="game-options">
+                    <div class="game-section">
+                        <h3>🎲 Escolha a Faixa</h3>
+                        <div class="range-buttons">
+                            <button class="range-btn" data-range="50" data-multiplier="1.2" data-chances="4">
+                                <div class="range-content">
+                                    <div class="range-title">1-50</div>
+                                    <div class="range-multiplier">1.2x</div>
+                                    <div class="range-divider"></div>
+                                    <div class="range-chances">4 chances</div>
+                                </div>
+                            </button>
+                            <button class="range-btn" data-range="100" data-multiplier="2" data-chances="4">
+                                <div class="range-content">
+                                    <div class="range-title">1-100</div>
+                                    <div class="range-multiplier">2x</div>
+                                    <div class="range-divider"></div>
+                                    <div class="range-chances">4 chances</div>
+                                </div>
+                            </button>
+                            <button class="range-btn" data-range="200" data-multiplier="2.5" data-chances="5">
+                                <div class="range-content">
+                                    <div class="range-title">1-200</div>
+                                    <div class="range-multiplier">2.5x</div>
+                                    <div class="range-divider"></div>
+                                    <div class="range-chances">5 chances</div>
+                                </div>
+                            </button>
+                            <button class="range-btn" data-range="300" data-multiplier="5" data-chances="5">
+                                <div class="range-content">
+                                    <div class="range-title">1-300</div>
+                                    <div class="range-multiplier">5x</div>
+                                    <div class="range-divider"></div>
+                                    <div class="range-chances">5 chances</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="game-section">
+                        <h3>🔢 Escolha seu Número</h3>
+                        <div class="number-input-container">
+                            <input type="number" id="guess-number" min="1" max="50" placeholder="Digite um número">
+                            <div class="number-suggestions" id="number-suggestions">
+                                <span class="suggestion-label">Sugestões da sorte:</span>
+                                <button class="suggestion-btn" data-number="7">7</button>
+                                <button class="suggestion-btn" data-number="13">13</button>
+                                <button class="suggestion-btn" data-number="21">21</button>
+                                <button class="suggestion-btn" data-number="42">42</button>
+                            </div>
+                        </div>
+                        <p id="range-info">Faixa atual: 1-50</p>
+                        <p id="chances-info">Chances restantes: 4</p>
+                    </div>
+
+                    <div class="game-section">
+                        <h3>💰 Valor da Aposta</h3>
+                        <div class="bet-amount-container">
+                            <input type="number" id="bet-amount" min="1" step="1" placeholder="Valor">
+                            <div class="potential-win" id="potential-win">
+                                Ganho potencial: <span class="win-amount">R$ 0,00</span>
+                            </div>
+                        </div>
+                        <div class="quick-bet-buttons">
+                            <button class="quick-bet-btn" data-amount="5">R$ 5</button>
+                            <button class="quick-bet-btn" data-amount="10">R$ 10</button>
+                            <button class="quick-bet-btn" data-amount="20">R$ 20</button>
+                            <button class="quick-bet-btn" data-amount="50">R$ 50</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="place-bet-btn" class="btn btn-large btn-primary">
+                    <span class="btn-text">Apostar</span>
+                    <div class="btn-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        Processando...
+                    </div>
+                </button>
+
+                <div class="game-result" id="game-result" style="display: none;">
+                    <!-- Resultados serão exibidos aqui via JavaScript -->
+                </div>
+
+                <div class="game-hint" id="game-hint" style="display: none;">
+                    <!-- Dicas serão exibidas aqui via JavaScript -->
+                </div>
+            </section>
+
+            <section class="recent-bets">
+                <h3>📊 Apostas Recentes</h3>
+                <div class="stats-summary">
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-bets-today">0</span>
+                        <span class="stat-label">Apostas Hoje</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="win-rate-today">0%</span>
+                        <span class="stat-label">Taxa de Vitória</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="biggest-win">R$ 0</span>
+                        <span class="stat-label">Maior Ganho</span>
+                    </div>
+                </div>
+                <div class="bets-table-container">
+                    <table class="bets-table">
+                        <thead>
+                            <tr>
+                                <th>⏰ Hora</th>
+                                <th>🎯 Faixa</th>
+                                <th>🔢 Seu Número</th>
+                                <th>🎲 Número Sorteado</th>
+                                <th>💰 Aposta</th>
+                                <th>🎮 Modo</th>
+                                <th>📈 Resultado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-bets-body">
+                            <!-- Dados serão inseridos via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+<!-- Modal de Depósito -->
+<div class="modal" id="deposit-modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>💰 Depositar Saldo</h2>
+        <form id="deposit-form">
+            <div class="form-group">
+                <label for="deposit-amount">Valor (R$)</label>
+                <input type="number" id="deposit-amount" min="10" step="5" required>
+            </div>
+            <div class="form-group">
+                <label>Método de Pagamento</label>
+                <div class="payment-methods">
+                    <div class="payment-method">
+                        <input type="radio" id="pix" name="payment-method" value="pix" checked>
+                        <label for="pix">📱 Pix (PagSeguro)</label>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Confirmar Depósito</button>
+        </form>
+    </div>
+</div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Lucky Number. Todos os direitos reservados. ✨</p>
+        </div>
+    </footer>
+
+    <script>
+       
+        
+        // Medidor da sorte
+        function updateLuckMeter() {
+            const luckFill = document.getElementById('luck-fill');
+            const luckPercentage = document.getElementById('luck-percentage');
+            const luck = Math.floor(Math.random() * 100) + 1;
+            
+            luckFill.style.width = luck + '%';
+            luckPercentage.textContent = luck + '%';
+            
+            if (luck > 70) {
+                luckFill.style.background = 'linear-gradient(90deg, #10B981, #059669)';
+            } else if (luck > 40) {
+                luckFill.style.background = 'linear-gradient(90deg, #F59E0B, #D97706)';
+            } else {
+                luckFill.style.background = 'linear-gradient(90deg, #EF4444, #DC2626)';
+            }
+        }
+        
+        // Sugestões de números
+        function updateNumberSuggestions(range) {
+            const suggestions = document.querySelectorAll('.suggestion-btn');
+            suggestions.forEach(btn => {
+                const randomNum = Math.floor(Math.random() * range) + 1;
+                btn.textContent = randomNum;
+                btn.setAttribute('data-number', randomNum);
+            });
+        }
+        
+        // Calcular ganho potencial
+        function updatePotentialWin() {
+            const betAmount = parseFloat(document.getElementById('bet-amount').value) || 0;
+            const activeRange = document.querySelector('.range-btn.active');
+            const multiplier = activeRange ? parseFloat(activeRange.getAttribute('data-multiplier')) : 1;
+            const potentialWin = betAmount * multiplier;
+            
+            document.querySelector('.win-amount').textContent = 'R$ ' + potentialWin.toFixed(2);
+        }
+        
+        // Animação de loading no botão
+        function showButtonLoading() {
+            const btn = document.getElementById('place-bet-btn');
+            const btnText = btn.querySelector('.btn-text');
+            const btnLoading = btn.querySelector('.btn-loading');
+            
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'flex';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+                btn.disabled = false;
+            }, 2000);
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            updateLuckMeter();
+            
+            // Atualizar medidor da sorte a cada 5 segundos
+            setInterval(updateLuckMeter, 5000);
+            
+            // Range buttons
+            document.querySelectorAll('.range-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const range = parseInt(this.getAttribute('data-range'));
+                    updateNumberSuggestions(range);
+                    updatePotentialWin();
+                    
+                    document.getElementById('guess-number').max = range;
+                    document.getElementById('range-info').textContent = `Faixa atual: 1-${range}`;
+                    document.getElementById('chances-info').textContent = `Chances restantes: ${this.getAttribute('data-chances')}`;
+                });
+            });
+            
+            // Suggestion buttons
+            document.querySelectorAll('.suggestion-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const number = this.getAttribute('data-number');
+                    document.getElementById('guess-number').value = number;
+                    this.classList.add('success-animation');
+                    setTimeout(() => this.classList.remove('success-animation'), 600);
+                });
+            });
+            
+            // Quick bet buttons
+            document.querySelectorAll('.quick-bet-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const amount = this.getAttribute('data-amount');
+                    document.getElementById('bet-amount').value = amount;
+                    updatePotentialWin();
+                    this.classList.add('success-animation');
+                    setTimeout(() => this.classList.remove('success-animation'), 600);
+                });
+            });
+            
+            // Bet amount input
+            document.getElementById('bet-amount').addEventListener('input', updatePotentialWin);
+            
+            // Place bet button
+            document.getElementById('place-bet-btn').addEventListener('click', function() {
+                showButtonLoading();
+                // Aqui você adicionaria a lógica real do jogo
+            });
+            
+            // Ativar primeiro range por padrão
+            document.querySelector('.range-btn').click();
+        });
+    </script>
+    
+    <style>
+        /* Estilos adicionais para os novos elementos */
+        .luck-meter {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .luck-bar {
+            width: 200px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin: 0 auto 10px;
+            overflow: hidden;
+        }
+        
+        .luck-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981, #059669);
+            border-radius: 4px;
+            transition: width 1s ease;
+            width: 50%;
+        }
+        
+        .luck-text {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .range-content {
+            text-align: center;
+        }
+        
+        .range-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .range-multiplier {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1E40AF;
+            margin-bottom: 10px;
+        }
+        
+        .range-divider {
+            height: 1px;
+            background: currentColor;
+            margin: 10px 0;
+            opacity: 0.3;
+        }
+        
+        .range-chances {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .number-input-container {
+            position: relative;
+        }
+        
+        .number-suggestions {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .suggestion-label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .suggestion-btn {
+            background: linear-gradient(135deg, #1E40AF, #8B5CF6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            margin: 0 5px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        
+        .suggestion-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(30, 64, 175, 0.3);
+        }
+        
+        .potential-win {
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #10B981;
+            font-weight: 600;
+        }
+        
+        .win-amount {
+            font-weight: 800;
+        }
+        
+        .btn-loading {
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .stats-summary {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            display: block;
+            font-size: 24px;
+            font-weight: 800;
+            color: #1E40AF;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-summary {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .number-suggestions {
+                margin-top: 10px;
+            }
+            
+            .suggestion-btn {
+                width: 30px;
+                height: 30px;
+                margin: 0 3px;
+            }
+        }
+    </style>
+
+    <script src="js/game.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
+
