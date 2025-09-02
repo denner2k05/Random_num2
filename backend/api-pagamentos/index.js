@@ -5,12 +5,12 @@ const express = require('express');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
-const axios = require('axios'); // Usaremos axios, que já está no seu projeto
+const axios = require('axios'); // Usaremos axios
 
 // === SUPABASE CLIENT ===
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// Captura erros globais para debug
+// Captura erros globais
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection:', reason);
 });
@@ -42,12 +42,9 @@ app.use(express.json());
 
 // DEBUG vars de ambiente
 console.log('[DEBUG] PAGSEGURO_TOKEN:', !!process.env.PAGSEGURO_TOKEN);
-console.log('[DEBUG] MAIL_USER:', process.env.MAIL_USER);
-console.log('[DEBUG] MAIL_PASS:', process.env.MAIL_PASS ? '****' : 'NÃO DEFINIDA');
-
 
 // =================================================================
-// ROTA DE PAGAMENTO CORRIGIDA (USANDO AXIOS DA FORMA CERTA)
+// ROTA DE PAGAMENTO FINAL E CORRIGIDA (USANDO A API DE PEDIDOS)
 // =================================================================
 app.post('/pagamento', async (req, res) => {
   try {
@@ -58,64 +55,81 @@ app.post('/pagamento', async (req, res) => {
 
     const valorCentavos = Math.round(Number(amount) * 100);
 
-    const pagseguroPayload = {
-      reference_id: user_id,
-      description: 'Depósito via Pix',
-      amount: {
-        value: valorCentavos,
-        currency: 'BRL'
-      },
-      payment_method: {
-        type: 'PIX'
-      },
-      payer: {
+    // Payload para a API de Pedidos (Orders API)
+    const orderPayload = {
+      reference_id: `user_${user_id}_${Date.now()}`, // Referência única para o pedido
+      customer: {
         email: email
-      }
+      },
+      items: [
+        {
+          name: 'Depósito de Créditos',
+          quantity: 1,
+          unit_amount: valorCentavos
+        }
+      ],
+      qr_codes: [
+        {
+          amount: {
+            value: valorCentavos
+          }
+        }
+      ],
+      notification_urls: [
+        `https://random-num2-cbo9.onrender.com/webhook-pagseguro` // URL do seu webhook
+      ]
     };
 
-    // A URL da API está correta, o problema era o cabeçalho de autorização
-    const response = await axios.post('https://api.pagseguro.com/pix/payments', pagseguroPayload, {
+    // Chamada para a API de Pedidos, que usa autenticação Bearer
+    const response = await axios.post('https://api.pagseguro.com/orders', orderPayload, {
       headers: {
-        // CORREÇÃO DEFINITIVA: Enviar o token diretamente, sem o prefixo "Bearer "
-        'Authorization': process.env.PAGSEGURO_TOKEN,
+        'Authorization': `Bearer ${process.env.PAGSEGURO_TOKEN}`,
         'Content-Type': 'application/json'
       }
     } );
 
     const result = response.data;
 
-    if (result && result.qr_codes && result.qr_codes.length > 0 && result.qr_codes[0].base64) {
+    // A estrutura da resposta da API de Pedidos é um pouco diferente
+    if (result && result.qr_codes && result.qr_codes.length > 0) {
+      const qrCodeData = result.qr_codes[0];
       res.json({
         id: result.id,
         status: result.status,
-        qr_code: result.qr_codes[0].base64,
-        qr_code_text: result.qr_codes[0].text
+        qr_code: qrCodeData.links.find(link => link.rel === 'QRCODE.PNG').href.split('base64,')[1], // Extrai o base64
+        qr_code_text: qrCodeData.text
       });
     } else {
-      console.error('[ERROR] Resposta inesperada do PagSeguro:', JSON.stringify(result, null, 2));
+      console.error('[ERROR] Resposta inesperada do PagSeguro (Orders API):', JSON.stringify(result, null, 2));
       res.status(500).json({ error: 'Erro ao gerar pagamento Pix', details: 'Resposta inesperada do PagSeguro' });
     }
   } catch (error) {
-    if (error.response && error.response.data) {
-      console.error('[ERROR] PagSeguro:', error.response.data);
-      res.status(500).json({ error: 'Erro na API do PagSeguro', details: error.response.data });
-    } else {
-      console.error('[ERROR] PagSeguro Genérico:', error);
-      res.status(500).json({ error: 'Erro ao gerar pagamento Pix pelo PagSeguro', details: error.message });
-    }
+    const errorDetails = error.response?.data || { message: error.message };
+    console.error('[ERROR] PagSeguro (Orders API):', JSON.stringify(errorDetails, null, 2));
+    res.status(500).json({ error: 'Erro na API do PagSeguro', details: errorDetails });
   }
 });
 
 
 // === [WEBHOOK PAGSEGURO] ===
+// A estrutura do webhook da API de Pedidos pode ser diferente.
+// Verifique a documentação ou os logs para ajustar se necessário.
 app.post('/webhook-pagseguro', async (req, res) => {
   try {
-    let body = req.body;
-    if (body && body.status && (body.status === 'PAID' || body.status === 'SUCCEEDED')) {
-      const userId = body.reference_id;
-      const valor = body.amount.value / 100;
+    const body = req.body;
+    console.log('[WEBHOOK] Notificação recebida:', JSON.stringify(body, null, 2));
+
+    // A API de Pedidos envia o status dentro de 'charges'
+    const charge = body.charges && body.charges[0];
+    if (charge && charge.status === 'PAID') {
+      // A referência do usuário pode estar no 'reference_id' principal
+      const referenceId = body.reference_id; // ex: "user_uuid_timestamp"
+      const userId = referenceId.split('_')[1]; // Extrai o UUID do usuário
+      
+      const valor = charge.amount.value / 100;
+
       if (!userId) {
-        console.error('[WEBHOOK] Sem reference_id, impossível creditar saldo.');
+        console.error('[WEBHOOK] Não foi possível extrair o user_id da referência:', referenceId);
       } else {
         const { data: profile, error: profileError } = await supabase.from('profiles').select('balance').eq('id', userId).single();
         if (profileError || !profile) {
@@ -139,17 +153,14 @@ app.post('/webhook-pagseguro', async (req, res) => {
   }
 });
 
+
 // === [ROTA DE CONSULTA DE SALDO] ===
 app.get('/api/saldo', async (req, res) => {
   try {
     const user_id = req.query.user_id;
-    if (!user_id) {
-      return res.status(400).json({ error: 'user_id obrigatório' });
-    }
+    if (!user_id) { return res.status(400).json({ error: 'user_id obrigatório' }); }
     const { data: profile, error } = await supabase.from('profiles').select('balance').eq('id', user_id).single();
-    if (error || !profile) {
-      return res.status(404).json({ error: 'Usuário não encontrado.' });
-    }
+    if (error || !profile) { return res.status(404).json({ error: 'Usuário não encontrado.' }); }
     res.json({ balance: parseFloat(profile.balance) });
   } catch (error) {
     console.error('[SALDO] Erro ao buscar saldo:', error);
@@ -168,42 +179,29 @@ const transporter = nodemailer.createTransport({
 
 // === [ROTA DE SAQUE] ===
 app.post('/api/solicitar-saque', async (req, res) => {
-  console.log('🟢 Recebido POST em /api/solicitar-saque!!!');
   const { valor, metodo, pixKeyType, pixKey, bankName, accountNumber, branchNumber, usuario, user_id } = req.body;
-  if (!user_id || typeof valor !== 'number' || valor <= 0) {
-    return res.status(400).json({ error: 'Dados inválidos para saque.' });
-  }
+  if (!user_id || typeof valor !== 'number' || valor <= 0) { return res.status(400).json({ error: 'Dados inválidos para saque.' }); }
   try {
     const { data: profile, error: profileError } = await supabase.from('profiles').select('balance').eq('id', user_id).single();
-    if (profileError || !profile) {
-      return res.status(404).json({ error: 'Usuário não encontrado.' });
-    }
+    if (profileError || !profile) { return res.status(404).json({ error: 'Usuário não encontrado.' }); }
     const saldoAtual = parseFloat(profile.balance);
-    if (saldoAtual < valor) {
-      return res.status(400).json({ error: 'Saldo insuficiente para saque.' });
-    }
+    if (saldoAtual < valor) { return res.status(400).json({ error: 'Saldo insuficiente para saque.' }); }
     const novoSaldo = saldoAtual - valor;
     const { error: updateError } = await supabase.from('profiles').update({ balance: novoSaldo }).eq('id', user_id);
-    if (updateError) {
-      return res.status(500).json({ error: 'Erro ao atualizar saldo.' });
-    }
+    if (updateError) { return res.status(500).json({ error: 'Erro ao atualizar saldo.' }); }
     await supabase.from('transactions').insert([{ user_id: user_id, type: 'withdrawal', amount: valor, payment_method: metodo, status: 'pending' }]);
     let saqueInfo = `<b>Solicitação de saque recebida:</b>  
 <b>Usuário:</b> ${usuario || 'Desconhecido'}  
 <b>Valor:</b> R$ ${Number(valor).toFixed(2)}  
 <b>Método:</b> ${metodo}  
 `;
-    if (metodo === 'pix') {
-      saqueInfo += `<b>Tipo de chave PIX:</b> ${pixKeyType || ''}  
+    if (metodo === 'pix') { saqueInfo += `<b>Tipo de chave PIX:</b> ${pixKeyType || ''}  
 <b>Chave PIX:</b> ${pixKey || ''}  
-`;
-    }
-    if (metodo === 'bank-transfer') {
-      saqueInfo += `<b>Banco:</b> ${bankName || ''}  
+`; }
+    if (metodo === 'bank-transfer') { saqueInfo += `<b>Banco:</b> ${bankName || ''}  
 <b>Conta:</b> ${accountNumber || ''}  
 <b>Agência:</b> ${branchNumber || ''}  
-`;
-    }
+`; }
     await transporter.sendMail({ from: process.env.MAIL_USER, to: 'maiconsantoslnum@gmail.com', subject: 'Nova solicitação de saque', html: saqueInfo });
     res.status(200).json({ success: true, message: 'Solicitação de saque enviada e saldo descontado!' });
   } catch (err) {
